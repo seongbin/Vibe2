@@ -1,15 +1,6 @@
 String.prototype.calc_width = function (font_str) {
 	var font = JSON.parse(font_str);
-	return utils.CalcTextWidth(this, font.Name, font.Size, font.Weight || 400);
-}
-
-String.prototype.repeat = function (num) {
-	if (num >= 0 && num <= 5) {
-		var g = Math.round(num);
-	} else {
-		return "";
-	}
-	return new Array(g + 1).join(this);
+	return utils.CalcTextWidth(this, font.Name, font.Size, font.Weight || DWRITE_FONT_WEIGHT_REGULAR);
 }
 
 function on_colours_changed() {
@@ -26,15 +17,8 @@ function on_font_changed() {
 
 function on_get_album_art_done(metadb, art_id, image) {
 	if (!image) return;
-	var max_size = 300;
 	for (var i = 0; i < brw.groups.length; i++) {
 		if (brw.groups[i].metadb && brw.groups[i].metadb.Compare(metadb)) {
-			if (image.Width > max_size || image.Height > max_size) {
-				var s = Math.min(max_size / image.Width, max_size / image.Height);
-				var w = Math.floor(image.Width * s);
-				var h = Math.floor(image.Height * s);
-				image.Resize(w, h);
-			}
 			var cached_filename = generate_filename(brw.groups[i].cachekey, art_id);
 			image.SaveAs(cached_filename);
 			images.cache[cached_filename] = image;
@@ -57,52 +41,55 @@ function clamp(value, min, max) {
 	return value;
 }
 
-function update_extra_font_size(s) {
-	var tmp = clamp(g_fsize.value + s, 9, 14);
-	if (g_fsize.value != tmp) {
-		g_fsize.value = tmp;
-		window.SetProperty("SMOOTH.FONT.SIZE", g_fsize.value);
+function update_extra_font_size(step) {
+	var tmp = clamp(ppt.fontSize.value + step, 9, 14);
+	if (ppt.fontSize.value != tmp) {
+		ppt.fontSize.value = tmp;
+		window.SetProperty("SMOOTH.FONT.SIZE", ppt.fontSize.value);
 		get_font();
 		get_metrics();
 		get_images();
-		brw.scrollbar.setCursorButton();
 		brw.repaint();
 	}
 }
 
 function get_images() {
 	var gb;
-	var cs = scale(g_fsize.value + 91); // cover size
-	var bs = scale(g_fsize.value + 5);
-	var font_cover = _font("Segoe Fluent Icons", cs * 0.25);
-	var font_icon = _font("Segoe Fluent Icons", bs * 0.5);
+	var cover_size = scale(ppt.fontSize.value + 41);
+	var button_size = scale(ppt.fontSize.value + 7);
+	var icon_font = _font("Segoe Fluent Icons", button_size * 0.5);
 
-	images.noart = utils.CreateImage(cs, cs);
+	images.noart = utils.CreateImage(cover_size, cover_size);
 	gb = images.noart.GetGraphics();
-	gb.FillRectangle(0, 0, cs, cs, g_colour_splitter);
-	gb.WriteText("\ue189", font_cover, g_colour_blend, 1, 1, cs, cs, 2, 2);
+	gb.FillRectangle(0, 0, cover_size, cover_size, g_colour_splitter);
+	gb.WriteText("No\nCover", g_font_bold, g_colour_blend, 1, 1, cover_size, cover_size, 2, 2);
 	images.noart.ReleaseGraphics();
 
-	images.stream = utils.CreateImage(cs, cs);
+	images.stream = utils.CreateImage(cover_size, cover_size);
 	gb = images.stream.GetGraphics();
-	gb.FillRectangle(0, 0, cs, cs, g_colour_splitter);
-	gb.WriteText("\ue93e", font_cover, g_colour_blend, 1, 1, cs, cs, 2, 2);
+	gb.FillRectangle(0, 0, cover_size, cover_size, g_colour_splitter);
+	gb.WriteText("Web\nRadios", g_font_bold, g_colour_blend, 1, 1, cover_size, cover_size, 2, 2);
 	images.stream.ReleaseGraphics();
 
-	images.magnify = utils.CreateImage(bs, bs);
+	images.magnify = utils.CreateImage(button_size, button_size);
 	gb = images.magnify.GetGraphics();
-	gb.WriteText("\uf78b", font_icon, g_colour_blend, 0, 0, bs, bs, 2, 2);
+	gb.WriteText("\uf78b", icon_font, g_colour_blend, 0, 0, button_size, button_size, 2, 2);
 	images.magnify.ReleaseGraphics();
 
-	images.reset_normal = utils.CreateImage(bs, bs);
+	images.reset_normal = utils.CreateImage(button_size, button_size);
 	gb = images.reset_normal.GetGraphics();
-	gb.WriteText("\ue711", font_icon, g_colour_blend, 0, 0, bs, bs, 2, 2);
+	gb.WriteText("\ue711", icon_font, g_colour_blend, 0, 0, button_size, button_size, 2, 2);
 	images.reset_normal.ReleaseGraphics();
 
-	images.reset_hover = utils.CreateImage(bs, bs);
+	images.reset_hover = utils.CreateImage(button_size, button_size);
 	gb = images.reset_hover.GetGraphics();
-	gb.WriteText("\ue711", font_icon, g_colour_text, 0, 0, bs, bs, 2, 2);
+	gb.WriteText("\ue711", icon_font, g_colour_text, 0, 0, button_size, button_size, 2, 2);
 	images.reset_hover.ReleaseGraphics();
+
+	images.reset_down = utils.CreateImage(button_size, button_size);
+	gb = images.reset_down.GetGraphics();
+	gb.WriteText("\ue711", icon_font, g_colour_text, 0, 0, button_size, button_size, 2, 2);
+	images.reset_down.ReleaseGraphics();
 }
 
 function validate_indexes(playlist, item) {
@@ -120,7 +107,8 @@ function generate_filename(cachekey, art_id) {
 	return CACHE_FOLDER + prefix + cachekey + ".jpg";
 }
 
-function get_art(metadb, filename, art_id) {
+function get_art(metadb, cachekey, art_id) {
+	var filename = generate_filename(cachekey, art_id);
 	var img = images.cache[filename];
 	if (img) return img;
 
@@ -131,7 +119,7 @@ function get_art(metadb, filename, art_id) {
 	}
 
 	window.SetTimeout(function () {
-		metadb.GetAlbumArtAsync(window.ID, art_id, false);
+		metadb.GetAlbumArtThumbAsync(window.ID, art_id);
 	}, 10);
 	return img;
 }
@@ -169,11 +157,7 @@ function drawImage(gr, img, dst_x, dst_y, dst_w, dst_h, auto_fill, border, opaci
 }
 
 function drawSelectedRectangle(gr, x, y, w, h) {
-	if (g_themed) {
-		g_theme.DrawThemeBackground(gr, x, y, w, h);
-	} else {
-	gr.FillRectangle(x, y, w, h, setAlpha(g_colour_selection, 96));
-	}
+	gr.FillRectangle(x, y, w, h, setAlpha(g_colour_selection, 48));
 }
 
 function GetKeyboardMask() {
@@ -254,7 +238,7 @@ function scale(size) {
 }
 
 function _p(name, default_) {
-	Object.defineProperty(this, typeof default_ == 'boolean' ? 'enabled' : 'value', {
+	Object.defineProperty(this, typeof default_ == "boolean" ? "enabled" : "value", {
 		get : function () {
 			return this.val;
 		},
@@ -287,23 +271,29 @@ function _font(name, size, bold, style) {
 function get_font() {
 	var name = JSON.parse(window.IsDefaultUI ? window.GetFontDUI(0) : window.GetFontCUI(0)).Name;
 
-	g_font = _font(name, g_fsize.value);
-	g_font_group = _font(name, g_fsize.value + 2, true);
+	g_font = _font(name, ppt.fontSize.value);
+	g_font_bold = _font(name, ppt.fontSize.value, true);
+	g_font_group = _font(name, ppt.fontSize.value + 2);
 
-	switch (true){
-		case utils.CheckFont("Guifx v2 Transports"):
-			g_font_rating = _font("Guifx v2 Transports", g_fsize.value + 5);
-			chars.rating_on = 'b';
-			chars.rating_off = 'b';
-			break;
-		default:
-			g_font_rating = _font("Segoe Fluent Icons", g_fsize.value + 5);
-			chars.rating_on = '\ue1cf';
-			chars.rating_off = '\ue1ce';	
+	if (ppt.ratingStar.enabled) {
+		if (utils.CheckFont("Guifx v2 Transports")) {
+			g_font_rating = _font("Guifx v2 Transports", ppt.fontSize.value + 5);
+			chars.rating_on = "b";
+			chars.rating_off = "b";
+		} else {
+			g_font_rating = _font("Segoe Fluent Icons", ppt.fontSize.value + 5);
+			chars.rating_on = "\ue1cf";
+			chars.rating_off = "\ue1ce";
+		}
+	} else {
+		g_font_rating = _font("Segoe Fluent Icons", ppt.fontSize.value + 1);
+		chars.heart_on = "\ue00b";
+		chars.heart_off = "\ue006";
 	}
-
 	g_font_height = height(g_font);
+	g_font_bold_height = height(g_font_bold);
 	g_font_group_height = height(g_font_group);
+	g_margin = scale(ppt.fontSize.value - 4);
 }
 
 function get_colours() {
@@ -323,36 +313,30 @@ function get_colours() {
 		g_colour_splitter = window.IsDark ? 0xff333333 : 0xfff0f0f0;
 	}
 	g_colour_blend = blendColours(g_colour_background, g_colour_text, 0.35);
-	// check g_theme to make sure window.CreateThemeManager didn't return null
-	// window.IsThemed is a new boolean property for 3.2.11 and later, undefined for previous versions
-	g_themed = g_theme && window.IsThemed;
-	if (g_themed) {
-		g_theme.SetPartAndStateID(6, 12);
-		g_colour_selected_text = utils.GetSysColour(8);
-	}
 	get_images();
 }
 
 function process_string(str) {
-  str_ = [];
-  str = str.toLowerCase();
-  while (str != (temp = str.replace(' ', ' ')))
-    str = temp;
-  var str = str.split(' ').sort();
-  for (var i in str) {
-    if (str[i] != '')
-      str_[str_.length] = str[i];
-  }
-  return str_;
+	var str_ = [];
+	str = str.toLowerCase();
+	while (str != (temp = str.replace("  ", " ")))
+		str = temp;
+	str = str.split(" ").sort();
+	for (var i in str) {
+		if (str[i] != "") {
+			str_[str_.length] = str[i];
+		}
+	}
+	return str_;
 }
 
 function match(input, str) {
-  input = input.toLowerCase();
-  for (var j in str) {
-    if (input.indexOf(str[j]) < 0)
-      return false;
-  }
-  return true;
+	input = input.toLowerCase();
+	for (var j in str) {
+		if (input.indexOf(str[j]) < 0)
+			return false;
+	}
+	return true;
 }
 
 var ButtonStates = {
@@ -382,23 +366,25 @@ var ppt = {
 	refreshRate: 25,
 	scrollSmoothness: 2.5,
 	rowScrollStep: 3,
+	ratingStar: new _p("SMOOTH.RATING.STAR", false),
+	fontSize: new _p("SMOOTH.FONT.SIZE", 9)
 };
 
 var CACHE_FOLDER = fb.ProfilePath + "cache\\";
 utils.CreateFolder(CACHE_FOLDER);
 
-var g_font = "";
-var g_font_group = "";
-var g_fsize = new _p('SMOOTH.FONT.SIZE', 9);;
+var g_font = undefined;
+var g_font_bold = undefined;
+var g_font_group = undefined;
+var g_margin = 0;
 
-var g_colour_text = 0;
-var g_colour_selected_text = 0;
-var g_colour_background = 0;
-var g_colour_selection = 0;
-var g_colour_highlight = 0;
-var g_colour_splitter = 0;
-var g_themed = false;
-var g_theme = window.CreateThemeManager("LISTVIEW");
+var g_colour_text = undefined;
+var g_colour_blend = undefined;
+var g_colour_selected_text = undefined;
+var g_colour_background = undefined;
+var g_colour_selection = undefined;
+var g_colour_highlight = undefined;
+var g_colour_splitter = undefined;
 
 var isScrolling = false;
 var need_repaint = false;
@@ -406,7 +392,6 @@ var g_start_ = 0, g_end_ = 0;
 var m_x = 0, m_y = 0;
 var scroll_ = 0, scroll = 0, scroll_prev = 0;
 var ww = 0, wh = 0;
-var margin = scale(g_fsize.value - 4);
 
 get_font();
 get_colours();

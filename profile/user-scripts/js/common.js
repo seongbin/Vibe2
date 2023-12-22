@@ -1,19 +1,5 @@
-Array.prototype.srt=function(){for(var z=0,t;t=this[z];z++){this[z]=[];var x=0,y=-1,n=true,i,j;while(i=(j=t.charAt(x++)).charCodeAt(0)){var m=(i==46||(i>=48&&i<=57));if(m!==n){this[z][++y]='';n=m;}
-this[z][y]+=j;}}
-this.sort(function(a,b){for(var x=0,aa,bb;(aa=a[x])&&(bb=b[x]);x++){aa=aa.toLowerCase();bb=bb.toLowerCase();if(aa!==bb){var c=Number(aa),d=Number(bb);if(c==aa&&d==bb){return c-d;}else return(aa>bb)?1:-1;}}
-return a.length-b.length;});for(var z=0;z<this.length;z++)
-this[z]=this[z].join('');}
-
-Array.prototype.empty = function () {
-	return this.length == 0;
-}
-
-String.prototype.empty = function () {
-	return this.length == 0;
-}
-
 function _artistFolder(artist) {
-	var folder = folders.artists + _sanitiseFolder(artist);
+	var folder = folders.artists + utils.ReplaceIllegalChars(artist, true, true);
 	utils.CreateFolder(folder);
 	return folder + '\\';
 }
@@ -75,11 +61,9 @@ function _buttons() {
 		}
 		if (this.btn) {
 			this.buttons[this.btn].cs('normal');
-			window.SetCursor(IDC_ARROW);
 		}
 		if (temp_btn) {
 			this.buttons[temp_btn].cs('hover');
-			window.SetCursor(IDC_HAND);
 		} else {
 			_tt('');
 		}
@@ -105,7 +89,7 @@ function _buttons() {
 
 	this.change_font = function (name) {
 		_.forEach(this.buttons, function (item) {
-			item.font = JSON.stringify({Name:name,Size:item.h - _scale(10)});
+			item.font = JSON.stringify({Name:name,Size:item.h});
 		});
 	}
 
@@ -134,7 +118,7 @@ function _drawImage(gr, img, dst_x, dst_y, dst_w, dst_h, mode, rounded, border, 
 
 	var rounded_mask = utils.CreateImage(img.Width, img.Height);
 	var temp_gr = rounded_mask.GetGraphics();
-	temp_gr.FillRoundedRectangle(0, 0, img.Width, img.Height, img.Width * 0.02, img.Height * 0.02, RGB(0, 0, 0));
+	temp_gr.FillRoundedRectangle(0, 0, img.Width, img.Height, img.Width * 0.02, img.Height * 0.02, 0xff000000);
 	rounded_mask.ReleaseGraphics();
 	temp_gr = null;
 
@@ -237,11 +221,15 @@ function _getExt(path) {
 
 function _getFiles(folder, exts) {
 	var files = [];
-	var folders = _stringToArray(folder, '|');
-	for (var i = 0; i < folders.length; i++) {
-		Array.prototype.push.apply(files, utils.ListFiles(folders[i]).toArray());
+
+	if (_.isArray(folder)) {
+		folder.forEach(function (item) {
+			Array.prototype.push.apply(files, utils.ListFiles(item).toArray());
+		});
+	} else {
+		files = utils.ListFiles(folder).toArray();
 	}
-	files.srt();
+
 	if (!exts) {
 		return files;
 	}
@@ -302,12 +290,12 @@ function _lockSize(w, h) {
 
 function _menu(x, y, flags) {
 	var menu = window.CreatePopupMenu();
-	var file = new _main_menu_helper('File', 1000, menu);
-	var edit = new _main_menu_helper('Edit', 2000, menu);
-	var view = new _main_menu_helper('View', 3000, menu);
-	var playback = new _main_menu_helper('Playback', 4000, menu);
-	var library = new _main_menu_helper('Library', 5000, menu);
-	var help = new _main_menu_helper('Help', 6000, menu);
+	var file = new _main_menu_helper('File', 10000, menu);
+	var edit = new _main_menu_helper('Edit', 20000, menu);
+	var view = new _main_menu_helper('View', 30000, menu);
+	var playback = new _main_menu_helper('Playback', 40000, menu);
+	var library = new _main_menu_helper('Library', 50000, menu);
+	var help = new _main_menu_helper('Help', 60000, menu);
 
 	var idx = menu.TrackPopupMenu(x, y, flags);
 	menu.Dispose();
@@ -315,23 +303,23 @@ function _menu(x, y, flags) {
 	switch (true) {
 	case idx == 0:
 		break;
-	case idx < 2000:
-		file.mm.ExecuteByID(idx - 1000);
+	case idx < 20000:
+		file.mm.ExecuteByID(idx - 10000);
 		break;
-	case idx < 3000:
-		edit.mm.ExecuteByID(idx - 2000);
+	case idx < 30000:
+		edit.mm.ExecuteByID(idx - 20000);
 		break;
-	case idx < 4000:
-		view.mm.ExecuteByID(idx - 3000);
+	case idx < 40000:
+		view.mm.ExecuteByID(idx - 30000);
 		break;
-	case idx < 5000:
-		playback.mm.ExecuteByID(idx - 4000);
+	case idx < 50000:
+		playback.mm.ExecuteByID(idx - 40000);
 		break;
-	case idx < 6000:
-		library.mm.ExecuteByID(idx - 5000);
+	case idx < 60000:
+		library.mm.ExecuteByID(idx - 50000);
 		break;
-	case idx < 7000:
-		help.mm.ExecuteByID(idx - 6000);
+	case idx < 70000:
+		help.mm.ExecuteByID(idx - 60000);
 		break;
 	}
 
@@ -375,10 +363,6 @@ function _q(value) {
 	return '"' + value + '"';
 }
 
-function _sanitiseFolder(folder) {
-	return utils.ReplaceIllegalChars(folder).replace(/\.+$/, '');
-}
-
 function _save(file, value) {
 	if (utils.WriteTextFile(file, value)) {
 		return true;
@@ -403,11 +387,11 @@ function _sb(ch, x, y, w, h, v, fn) {
 			window.SetCursor(IDC_HAND);
 			this.hover = true;
 			return true;
-		} else {
-			//window.SetCursor(IDC_ARROW);
-			this.hover =false;
-			return false;
 		}
+
+		//window.SetCursor(IDC_ARROW);
+		this.hover =false;
+		return false;
 	}
 
 	this.lbtn_up = function (x, y) {
@@ -444,7 +428,7 @@ function _stripTags(value) {
 	doc.open();
 	var div = doc.createElement('div');
 	div.innerHTML = value.toString().replace(/<[Pp][^>]*>/g, '').replace(/<\/[Pp]>/g, '<br>').replace(/\n/g, '<br>');
-	var tmp = _.trim(div.innerText);
+	var tmp = div.innerText.trim();
 	doc.close();
 	return tmp;
 }
@@ -468,7 +452,7 @@ var N = window.Name + ':';
 var LM = _scale(5);
 var TM = _scale(20);
 
-var tooltip = window.CreateTooltip('Segoe UI', _scale(11));
+var tooltip = window.CreateTooltip('Segoe UI', _scale(12));
 tooltip.SetMaxWidth(800);
 
 var folders = {};
@@ -508,41 +492,19 @@ var tfo = {
 	status: '%codec% \u00B7 %bitrate% kbps [\u00B7 %samplerate% Hz ][\u00B7 %channels% ][\u00B7 %playback_time% / ][%length%]'
 };
 
-var chars = {
-	prev: '\ue622',
-	play: '\uf5b0',
-	pause: '\uf8ae',
-	stop: '\ue002',
-	next: '\ue623',
-	heart_break: '\uea92',
-	heart_off: '\ueb51',
-	heart_on: '\ueb52',
-	rating_off: '\ue1ce',
-	rating_on: '\ue1cf',
-	shuffle: '\ue14b',
-	repeat_off: '\ue8ee',
-	repeat_on: '\ue8ed',
-	volume0: '\ue992',
-	volume1: '\ue993',
-	volume2: '\ue994', 
-	volume3: '\ue995',
-	volume4: '\ue74f',
-	close: '\ue8bb',
-	menu: '\ue700',
-	more: '\ue712',
-	pip: '\uea5f',
-	flowin: '\ue7c4',
-	output: '\uebde',
-	smile: '\ueb68',
-	pref: '\ue713',
-	down: '\ue70d',
-	up: '\ue70e',
-	download: '\ue118',
-	update: '\ue777',
-	folder_open: '\ue838',
-	delete: '\ue107',
-	// Ignore these, they are special chars for $rgb and $font parsing
-	etx : String.fromCharCode(3),
-	bel : String.fromCharCode(7),
-	tab : '\t',
-};
+chars.close = '\ue8bb';
+chars.flowin = '\uea5f';
+chars.heart_broken = '\ue00c';
+chars.horizental = '\ue147';
+chars.next = '\ue623';
+chars.output = '\uebde';
+chars.pause = '\uf8ae';
+chars.play = '\uf5b0';
+chars.prev = '\ue622';
+chars.stop = '\ue002';
+chars.vertical = '\ue146';
+chars.volume0 = '\ue992';
+chars.volume1 = '\ue993';
+chars.volume2 = '\ue994'; 
+chars.volume3 = '\ue995';
+chars.volume4 = '\ue74f';

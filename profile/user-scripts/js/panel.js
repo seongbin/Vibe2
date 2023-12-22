@@ -5,7 +5,7 @@ function _panel(options) {
 
 	this.colours_changed = function () {
 		switch (true) {
-		case !this.custom_colour:
+		case !this.custom_background:
 		case this.colours.mode.value == 0:
 			if (window.IsDefaultUI) {
 				this.colours.background = window.GetColourDUI(1);
@@ -17,6 +17,7 @@ function _panel(options) {
 				this.colours.highlight = window.GetColourCUI(4);
 			}
 			this.colours.rating = 0xffffa500;
+			this.colours.blend = blendColours(this.colours.background, this.colours.text, 0.35);
 		break;
 		case this.colours.mode.value == 1:
 			if (this.metadb) {
@@ -63,16 +64,22 @@ function _panel(options) {
 				}
 			}
 			this.colours.rating = this.colours.highlight;
+			this.colours.blend = blendColours(this.colours.background, this.colours.text, 0.50);
 		break;
 		case this.colours.mode.value == 2:
+			this.colours.text = 0xffffffff;
+			this.colours.highlight = window.IsDefaultUI ? window.GetColourDUI(2) : window.GetColourCUI(4);
+			this.colours.rating = 0xffffa500;
+			this.colours.blend = 0xffb6b6b6;
+			break;
+		case this.colours.mode.value == 3:
 			this.colours.background = this.colours.custom_background.value;
 			this.colours.text = this.colours.custom_text.value;
 			this.colours.highlight = this.colours.custom_highlight.value;
 			this.colours.rating = this.colours.highlight;
+			this.colours.blend = blendColours(this.colours.background, this.colours.text, 0.35);
 			break;
 		}
-		this.colours.blend = blendColours(this.colours.background, this.colours.text, 0.35);
-		this.colours.heart = 0xffc72335;
 		if (window.IsDefaultUI) {
 			this.colours.splitter = window.IsDark ? 0xff333333 : 0xfff0f0f0;
 		} {
@@ -90,13 +97,22 @@ function _panel(options) {
 		this.fonts.normal = JSON.stringify({Name:this.fonts.name,Size:_scale(this.fonts.size.value)});
 		this.fonts.bold = JSON.stringify({Name:this.fonts.name,Size:_scale(this.fonts.size.value),Weight:DWRITE_FONT_WEIGHT_SEMI_BOLD});
 		this.fonts.title = JSON.stringify({Name:this.fonts.name,Size:_scale(this.fonts.size.value + 2),Weight:DWRITE_FONT_WEIGHT_SEMI_BOLD});
-    this.fonts.fixed = JSON.stringify({Name:'Consolas',Size:_scale(this.fonts.size.value)});
+		this.fonts.fixed = JSON.stringify({Name:'Consolas',Size:_scale(this.fonts.size.value)});
+		this.fonts.rating = JSON.stringify({Name:utils.CheckFont('Guifx v2 Transports')?'Guifx v2 Transports':'Segoe Fluent Icons',Size:utils.CheckFont('Guifx v2 Transports')?_scale(this.fonts.size.value + 8):_scale(this.fonts.size.value + 4)});
+		this.fonts.heart = JSON.stringify({Name:'Segoe Fluent Icons',Size:_scale(this.fonts.size.value + 1)});
+		this.fonts.heart_extra = JSON.stringify({Name:'Segoe Fluent Icons',Size:_scale(this.fonts.size.value + 3)});
 		this.row_height = _scale(this.fonts.size.value + 8);
 		this.bs = _scale(this.fonts.size.value + 15);
 		_.invoke(this.text_objects, 'font_changed');
 		_.invoke(this.list_objects, 'size', true);
 		_.invoke(this.display_objects, 'refresh', true);
-		console.log(this.bs);
+	}
+
+	this.get_tfo = function (t) {
+		if (!this.tfo[t]) {
+			this.tfo[t] = fb.TitleFormat(t);
+		}
+		return this.tfo[t];
 	}
 
 	this.item_focus_change = function () {
@@ -110,11 +126,18 @@ function _panel(options) {
 
 	this.key_down = function (vkey) {
 		switch (vkey) {
-			case VK_UP : fb.VolumeUp(); break;
-			case VK_DOWN : fb.VolumeDown(); break;
 			case VK_LEFT : fb.RunMainMenuCommand('Playback/Seek/Back by 5 seconds'); break;
 			case VK_RIGHT : fb.RunMainMenuCommand('Playback/Seek/Ahead by 5 seconds'); break;
 			case VK_SPACEBAR : fb.PlayOrPause(); window.Repaint(); break;
+		}
+		if (utils.IsKeyPressed(VK_SHIFT) && vkey == 48) { // SHIFT+0
+			if (this.fonts.size.value > _.first(this.fonts.sizes)) {
+				this.fonts.size.value = _.first(this.fonts.sizes);
+				window.SetProperty('2K3.PANEL.FONTS.SIZE', this.fonts.size.value);
+				this.font_changed();
+				on_size();
+				window.Repaint();
+			}
 		}
 	}
 
@@ -128,7 +151,7 @@ function _panel(options) {
 
 	this.paint = function (gr) {
 		switch (true) {
-		case !this.custom_colour:
+		case !this.custom_background:
 		case this.colours.mode.value == 0:
 			var col = this.colours.background;
 			break;
@@ -136,6 +159,7 @@ function _panel(options) {
 		var col = blendColours(this.colours.background, this.colours.splitter, 0.01);
 			break;
 		case this.colours.mode.value == 2:
+		case this.colours.mode.value == 3:
 			var col = this.colours.custom_background.value;
 			break;
 		}
@@ -162,21 +186,22 @@ function _panel(options) {
 			}, this);
 			this.s1.CheckMenuRadioItem(_.first(this.fonts.sizes), _.last(this.fonts.sizes), this.fonts.size.value);
 			this.s1.AppendTo(this.m, MF_STRING, 'Font size');
-			this.m.AppendMenuSeparator();
 		}
-		if (this.custom_colour) {
+		if (this.custom_background) {
+			this.m.AppendMenuSeparator();
 			this.s2.AppendMenuItem(MF_STRING, 100, window.IsDefaultUI ? 'Use default UI setting' : 'Use columns UI setting');
 			this.s2.AppendMenuItem(MF_STRING, 101, 'Dynamic colours');
-			this.s2.AppendMenuItem(MF_STRING, 102, 'Custom colours');
-			this.s2.CheckMenuRadioItem(100, 102, this.colours.mode.value + 100);
+			this.s2.AppendMenuItem(MF_STRING, 102, 'Blurred image');
+			this.s2.AppendMenuItem(MF_STRING, 103, 'Custom colours');
+			this.s2.CheckMenuRadioItem(100, 103, this.colours.mode.value + 100);
 			this.s2.AppendMenuSeparator();
-			this.s2.AppendMenuItem(EnableMenuIf(this.colours.mode.value == 2), 103, 'Background colour...');
-			this.s2.AppendMenuItem(EnableMenuIf(this.colours.mode.value == 2), 104, 'Text colour...');
-			this.s2.AppendMenuItem(EnableMenuIf(this.colours.mode.value == 2), 105, 'Highlight colour...');
+			this.s2.AppendMenuItem(EnableMenuIf(this.colours.mode.value == 3), 104, 'Background colour...');
+			this.s2.AppendMenuItem(EnableMenuIf(this.colours.mode.value == 3), 105, 'Text colour...');
+			this.s2.AppendMenuItem(EnableMenuIf(this.colours.mode.value == 3), 106, 'Highlight colour...');
 			this.s2.AppendTo(this.m, MF_STRING, 'Colours');
-			this.m.AppendMenuSeparator();
 		}
 		if (this.metadb_func) {
+			this.m.AppendMenuSeparator();
 			this.s3.AppendMenuItem(MF_STRING, 110, 'Prefer now playing');
 			this.s3.AppendMenuItem(MF_STRING, 111, 'Follow selected track (playlist)');
 			this.s3.CheckMenuRadioItem(110, 111, this.selection.value + 110);
@@ -197,22 +222,23 @@ function _panel(options) {
 		case idx == 100:
 		case idx == 101:
 		case idx == 102:
+		case idx == 103:
 			this.colours.mode.value = idx - 100;
 			on_colours_changed();
 			on_size();
 			window.Repaint();
 			break;
-		case idx == 103:
+		case idx == 104:
 			this.colours.custom_background.value = utils.ColourPicker(this.colours.custom_background.value);
 			on_colours_changed();
 			window.Repaint();
 			break;
-		case idx == 104:
+		case idx == 105:
 			this.colours.custom_text.value = utils.ColourPicker(this.colours.custom_text.value);
 			on_colours_changed();
 			window.Repaint();
 			break;
-		case idx == 105:
+		case idx == 106:
 			this.colours.custom_highlight.value = utils.ColourPicker(this.colours.custom_highlight.value);
 			on_colours_changed();
 			window.Repaint();
@@ -240,17 +266,15 @@ function _panel(options) {
 		if (!this.metadb) {
 			return '';
 		}
-		if (!this.tfo[t]) {
-			this.tfo[t] = fb.TitleFormat(t);
-		}
+		var tfo = this.get_tfo(t);
 		if (this.selection.value == 0 && fb.IsPlaying) {
-			return this.tfo[t].Eval();
+			return tfo.Eval();
 		}
-		return this.tfo[t].EvalWithMetadb(this.metadb);
+		return tfo.EvalWithMetadb(this.metadb);
 	}
 
-	this.update_extra_font_size = function (s) {
-		var tmp = _clamp(this.fonts.size.value + s, _.first(this.fonts.sizes), _.last(this.fonts.sizes));
+	this.update_extra_font_size = function (step) {
+		var tmp = _clamp(this.fonts.size.value + step, _.first(this.fonts.sizes), _.last(this.fonts.sizes));
 		if (this.fonts.size.value != tmp) {
 			this.fonts.size.value = tmp;
 			window.SetProperty('2K3.PANEL.FONTS.SIZE', this.fonts.size.value);
@@ -261,7 +285,7 @@ function _panel(options) {
 	}
 
 	this.wheel = function (s, object) {
-		if (utils.IsKeyPressed(VK_CONTROL)) {
+		if (utils.IsKeyPressed(VK_SHIFT)) {
 			this.update_extra_font_size(s);
 		} else if (object) {
 			object.wheel(s);
@@ -275,7 +299,7 @@ function _panel(options) {
 	this.list_objects = [];
 	this.text_objects = [];
 	this.display_objects = [];
-	this.custom_colour = false;
+	this.custom_background = false;
 	this.w = 0;
 	this.h = 0;
 	this.metadb = fb.GetFocusItem();
@@ -287,8 +311,8 @@ function _panel(options) {
 		this.selection = new _p('2K3.PANEL.SELECTION', 0);
 	}
 	if (typeof options == 'object') {
-		if (options.custom_colour === true) {
-			this.custom_colour = true;
+		if (options.custom_background === true) {
+			this.custom_background = true;
 			this.colours.mode = new _p('2K3.PANEL.COLOURS.MODE', 0);
 			this.colours.custom_background = new _p('2K3.PANEL.COLOURS.CUSTOM.BACKGROUND', RGB(32, 32, 32));
 			this.colours.custom_text = new _p('2K3.PANEL.COLOURS.CUSTOM.TEXT', RGB(255, 255, 255));

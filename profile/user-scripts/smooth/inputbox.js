@@ -4,7 +4,7 @@ var cInputbox = {
 	clipboard: null
 }
 
-function oInputbox(w, h, live_update, default_text, empty_text, func) {
+function oInputbox(w, h, live_update, default_text, empty_text, func, parent) {
 	this.w = w;
 	this.h = h;
 	this.default_text = default_text;
@@ -45,7 +45,7 @@ function oInputbox(w, h, live_update, default_text, empty_text, func) {
 			gr.FillRectangle(this.x, this.y, this.w, this.h, g_colour_background);
 		}
 
-		//  draw selection
+		// draw selection
 		if (this.SelBegin != this.SelEnd) {
 			this.select = true;
 			this.CalcText();
@@ -71,7 +71,7 @@ function oInputbox(w, h, live_update, default_text, empty_text, func) {
 			}
 
 			var selection_width = this.x + px1 + px2 - px1 > this.x + this.w ? this.w - px1 : px2 - px1
-			gr.FillRectangle(this.x + px1, this.y + (this.h - g_font_height) * 0.5 - 10, selection_width, g_font_height + 20, setAlpha(g_colour_selection, 96));
+			gr.FillRectangle(this.x + px1, this.y + (this.h - g_font_height) * 0.5 - 5, selection_width, g_font_height + 10, setAlpha(g_colour_selection, 96));
 		} else {
 			this.select = false;
 			this.text_selected = "";
@@ -88,18 +88,15 @@ function oInputbox(w, h, live_update, default_text, empty_text, func) {
 		if (cInputbox.cursor_state) {
 			if (this.Cpos >= this.offset) {
 				this.Cx = this.GetCx(this.Cpos);
-				var x1 = this.x + this.Cx;
-				var x2 = x1;
-        var y1 = this.y + (this.h - g_font_height) * 0.5 - 5;
-        var y2 = this.y + (this.h + g_font_height) * 0.5 + 5 ;
-				var lt = 1;
-				gr.DrawLine(x1, y1, x2, y2, lt, g_colour_text);
+				var x = this.x + this.Cx;
+				var y = this.y + (this.h - g_font_height) * 0.5;
+				gr.FillRectangle(x, y, 1, g_font_height, g_colour_text);
 			}
 		}
 	}
 
 	this.repaint = function () {
-		brw.repaint();
+		parent.repaint();
 	}
 
 	this.CalcText = function () {
@@ -150,7 +147,7 @@ function oInputbox(w, h, live_update, default_text, empty_text, func) {
 		}
 		cInputbox.timer_cursor = window.SetInterval(function () {
 			cInputbox.cursor_state = !cInputbox.cursor_state;
-			brw.repaint();
+			parent.repaint();
 		}, 500);
 	}
 
