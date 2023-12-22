@@ -1,10 +1,11 @@
-var panel = new _panel({ custom_colour : true });
+var panel = new _panel({ custom_background: true });
 var lastfm = new _lastfm();
 var text = new _text('lastfm_bio');
 var thumbs = new _thumbs();
 var buttons = new _buttons();
 
 thumbs.properties.cycle.value = 0;
+thumbs.properties.double_click_mode.value = 2;
 
 text.paint = function (gr) {
 	if (this.text_layout) {
@@ -48,7 +49,7 @@ thumbs.wheel = function (s) {
 			if (this.image >= this.images.length) {
 				this.image = 0;
 			}
-			buttons.check_default_file();
+			buttons.update();
 			window.Repaint();
 		}
 		return true;
@@ -57,11 +58,7 @@ thumbs.wheel = function (s) {
 }
 
 buttons.update = function () {
-	buttons.buttons.delete = new _button(thumbs.x + thumbs.w - panel.bs * 1.25, thumbs.y + panel.bs * 0.25, panel.bs, panel.bs, { char : chars.delete, colour: thumbs.images.length ? 0xffffffff : panel.colours.blend }, { char : chars.delete, colour: thumbs.images.length ? 0xffffffff : panel.colours.blend, bg : thumbs.images.length ? 0x96000000 : 0x48000000 }, function () { if (thumbs.images.length) { utils.RemovePath(thumbs.images[thumbs.image].Path); thumbs.update(); } }, thumbs.images.length ? 'Delete image' : '');
-	buttons.buttons.download = new _button(thumbs.x + thumbs.w - panel.bs * 2.25, thumbs.y + panel.bs * 0.25, panel.bs, panel.bs, { char : chars.download, colour: 0xffffffff }, { char : chars.download, colour: 0xffffffff, bg : 0x96000000 }, function () { thumbs.download(); }, 'Download now');
-	buttons.buttons.default_file = new _button(thumbs.x + thumbs.w - panel.bs * 3.25, thumbs.y + panel.bs * 0.25, panel.bs, panel.bs, { char : buttons.check_default_file() ? chars.heart_on : chars.heart_off, colour: buttons.check_default_file() ? colours.Red : 0xffffffff }, { char : buttons.check_default_file() ? chars.heart_break : chars.heart_on, colour: colours.Red, bg : 0x96000000 }, function () { try { buttons.check_default_file() ? thumbs.set_default(undefined) : thumbs.set_default(thumbs.images[thumbs.image].Path.split('\\').pop()); } catch (e) {} }, buttons.check_default_file() ? 'Clear default' : 'Set as default');
-	buttons.buttons.force = new _button(text.x + text.w - panel.bs * 1.25, thumbs.y + thumbs.h - panel.bs * 1.25, panel.bs, panel.bs, { char : chars.update, colour: 0xffffffff }, { char : chars.update, colour: 0xffffffff, bg : 0x96000000 }, function () { text.get(); text.get_extra(); }, 'Force update');
-	buttons.buttons.folder_open = new _button(text.x + text.w - panel.bs * 2.25, thumbs.y + thumbs.h - panel.bs * 1.25, panel.bs, panel.bs, { char : chars.folder_open, colour: 0xffffffff }, { char : chars.folder_open, colour: 0xffffffff, bg : 0x96000000 }, function () { try { buttons.folder_open(); } catch (e) {} }, 'Open containing folder');
+	buttons.buttons.layout = new _button(thumbs.x + thumbs.w - panel.bs * 1.25, thumbs.y + panel.bs * 0.25, panel.bs, panel.bs, { char: thumbs.properties.layout.value ? chars.vertical: chars.horizental, colour: 0xffffffff, bg: 0x96000000 }, { char: thumbs.properties.layout.value ? chars.horizental: chars.vertical, colour: 0xffffffff, bg: 0xff000000 }, function () { thumbs.properties.layout.value ? thumbs.properties.layout.value -= 1: thumbs.properties.layout.value += 1; on_size(); window.Repaint(); }, thumbs.properties.layout.value ? 'Horizental split': 'Vertical split');
 }
 
 buttons.folder_open = function () {
@@ -88,7 +85,6 @@ panel.item_focus_change();
 
 function on_colours_changed() {
 	panel.colours_changed();
-	buttons.update();
 	window.Repaint();
 }
 
@@ -104,27 +100,40 @@ function on_font_changed() {
 function on_http_request_done(task_id, success, response_text) {
 	thumbs.http_request_done(task_id, success, response_text);
 	text.http_request_done(task_id, success, response_text);
-	buttons.update();
 }
 
 function on_item_focus_change() {
 	if (panel.selection.value == 0 && fb.IsPlaying) return;
 	panel.item_focus_change();
-	buttons.check_default_file();
-	buttons.update();
 }
 
 function on_key_down(k) {
-	text.key_down(k);
-	thumbs.key_down(k);
+	panel.key_down(k);
+	// text.key_down(k);
+	// thumbs.key_down(k);
+	switch (k) {
+	case VK_F5:
+		text.get();
+		text.get_extra();
+		break;
+	case VK_DELETE:
+		if (thumbs.images.length) {
+			utils.RemovePath(thumbs.images[thumbs.image].Path);
+			thumbs.update();
+		}
+		break;
+	}
+	if (utils.IsKeyPressed(VK_CONTROL) && k == 48) {
+		thumbs.properties.ratio.value = 0.5;
+		on_size();
+		window.Repaint();
+	}
 }
 
 function on_metadb_changed(handles, fromhook) {
 	if (fromhook) return;
 	text.metadb_changed();
 	thumbs.metadb_changed();
-	buttons.check_default_file();
-	buttons.update();
 }
 
 function on_mouse_leave() {
@@ -156,19 +165,18 @@ function on_mouse_rbtn_up(x, y) {
 }
 
 function on_mouse_wheel(s) {
-	if (utils.IsKeyPressed(VK_SHIFT)) {
+	if (utils.IsKeyPressed(VK_CONTROL)) {
 		var value = _clamp(thumbs.properties.ratio.value - (s * 0.05), 0.2, 0.8);
 		if (value != thumbs.properties.ratio.value) {
 			thumbs.properties.ratio.value = value;
 			on_size();
 			window.Repaint();
 		}
-	} else if (utils.IsKeyPressed(VK_CONTROL)) {
+	} else if (utils.IsKeyPressed(VK_SHIFT)) {
 		panel.wheel(s);
 	} else {
 		thumbs.wheel(s);
 		text.wheel(s);
-		buttons.update();
 	}
 }
 
@@ -210,16 +218,30 @@ function on_playlist_switch() {
 function on_size() {
 	panel.size();
 
-	thumbs.x = TM;
-	thumbs.y = TM;
-	thumbs.w = panel.w - TM * 2;
-	thumbs.h = panel.h * thumbs.properties.ratio.value;
+	switch (thumbs.properties.layout.value) {
+		case 0:
+			thumbs.x = TM;
+			thumbs.y = TM;
+			thumbs.w = panel.w - TM * 2;
+			thumbs.h = panel.h * thumbs.properties.ratio.value;
 
-	text.x = TM;
-	text.y = thumbs.x + thumbs.h + TM;
-	text.w = panel.w - TM * 2;
-	text.h = panel.h - thumbs.y - thumbs.h - TM * 2;
-
+			text.x = TM;
+			text.y = thumbs.x + thumbs.h + TM;
+			text.w = panel.w - TM * 2;
+			text.h = panel.h - thumbs.y - thumbs.h - TM * 2;
+			break;
+		case 1:
+			thumbs.x = TM;
+			thumbs.y = TM;
+			thumbs.w = panel.w * thumbs.properties.ratio.value;
+			thumbs.h = panel.h - TM * 2;
+	
+			text.x = thumbs.x + thumbs.w + TM;
+			text.y = TM;
+			text.w = panel.w - thumbs.w - TM * 3;
+			text.h = panel.h - TM * 2;
+			break;
+	}
 	text.size();
 
 	buttons.update();
