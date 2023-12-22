@@ -5,6 +5,7 @@ var thumbs = new _thumbs();
 var buttons = new _buttons();
 
 thumbs.properties.cycle.value = 0;
+thumbs.properties.auto_download.enabled = false;
 
 text.paint = function (gr) {
 	if (this.text_layout) {
@@ -48,7 +49,7 @@ thumbs.wheel = function (s) {
 			if (this.image >= this.images.length) {
 				this.image = 0;
 			}
-			buttons.check_default_file();
+			buttons.update();
 			window.Repaint();
 		}
 		return true;
@@ -57,11 +58,10 @@ thumbs.wheel = function (s) {
 }
 
 buttons.update = function () {
-	buttons.buttons.delete = new _button(thumbs.x + thumbs.w - panel.bs * 1.25, thumbs.y + panel.bs * 0.25, panel.bs, panel.bs, { char : chars.delete, colour: thumbs.images.length ? 0xffffffff : panel.colours.blend }, { char : chars.delete, colour: thumbs.images.length ? 0xffffffff : panel.colours.blend, bg : thumbs.images.length ? 0x96000000 : 0x48000000 }, function () { if (thumbs.images.length) { utils.RemovePath(thumbs.images[thumbs.image].Path); thumbs.update(); } }, thumbs.images.length ? 'Delete image' : '');
-	buttons.buttons.download = new _button(thumbs.x + thumbs.w - panel.bs * 2.25, thumbs.y + panel.bs * 0.25, panel.bs, panel.bs, { char : chars.download, colour: 0xffffffff }, { char : chars.download, colour: 0xffffffff, bg : 0x96000000 }, function () { thumbs.download(); }, 'Download now');
-	buttons.buttons.default_file = new _button(thumbs.x + thumbs.w - panel.bs * 3.25, thumbs.y + panel.bs * 0.25, panel.bs, panel.bs, { char : buttons.check_default_file() ? chars.heart_on : chars.heart_off, colour: buttons.check_default_file() ? colours.Red : 0xffffffff }, { char : buttons.check_default_file() ? chars.heart_break : chars.heart_on, colour: colours.Red, bg : 0x96000000 }, function () { try { buttons.check_default_file() ? thumbs.set_default(undefined) : thumbs.set_default(thumbs.images[thumbs.image].Path.split('\\').pop()); } catch (e) {} }, buttons.check_default_file() ? 'Clear default' : 'Set as default');
-	buttons.buttons.force = new _button(text.x + text.w - panel.bs * 1.25, thumbs.y + thumbs.h - panel.bs * 1.25, panel.bs, panel.bs, { char : chars.update, colour: 0xffffffff }, { char : chars.update, colour: 0xffffffff, bg : 0x96000000 }, function () { text.get(); text.get_extra(); }, 'Force update');
-	buttons.buttons.folder_open = new _button(text.x + text.w - panel.bs * 2.25, thumbs.y + thumbs.h - panel.bs * 1.25, panel.bs, panel.bs, { char : chars.folder_open, colour: 0xffffffff }, { char : chars.folder_open, colour: 0xffffffff, bg : 0x96000000 }, function () { try { buttons.folder_open(); } catch (e) {} }, 'Open containing folder');
+	// buttons.buttons.default_file = new _button(text.x + text.w - panel.bs * 4.25, thumbs.y + thumbs.h - panel.bs * 1.25, panel.bs, panel.bs, { char : buttons.check_default_file() ? chars.heart_on : chars.heart_off, colour: buttons.check_default_file() ? colours.Red : 0x96ffffff, bg : 0x96000000 }, { char : buttons.check_default_file() ? chars.heart_break : chars.heart_on, colour: colours.Red }, function () { try { buttons.check_default_file() ? thumbs.set_default(undefined) : thumbs.set_default(thumbs.images[thumbs.image].Path.split('\\').pop()); } catch (e) {} }, buttons.check_default_file() ? 'Clear default' : 'Set as default image');
+	// buttons.buttons.download = new _button(text.x + text.w - panel.bs * 3.25, thumbs.y + thumbs.h - panel.bs * 1.25, panel.bs, panel.bs, { char : chars.download, colour: 0x96ffffff, bg : 0x96000000 }, { char : chars.download, colour: 0xffffffff, bg : 0x96000000 }, function () { thumbs.download(); }, 'Download image now');
+	// buttons.buttons.folder_open = new _button(text.x + text.w - panel.bs * 2.25, thumbs.y + thumbs.h - panel.bs * 1.25, panel.bs, panel.bs, { char : chars.folder_open, colour: 0x96ffffff, bg : 0x96000000 }, { char : chars.folder_open, colour: 0xffffffff, bg : 0x96000000 }, function () { try { buttons.folder_open(); } catch (e) {} }, 'Open containing folder');
+	buttons.buttons.force = new _button(text.x + text.w - panel.bs * 1.25, thumbs.y + thumbs.h - panel.bs * 1.25, panel.bs, panel.bs, { char : chars.update, colour: 0x96ffffff, bg : 0x96000000 }, { char : chars.update, colour: 0xffffffff, bg : 0x96000000 }, function () { text.get(); text.get_extra(); }, 'Force update text (F5)');
 }
 
 buttons.folder_open = function () {
@@ -88,7 +88,6 @@ panel.item_focus_change();
 
 function on_colours_changed() {
 	panel.colours_changed();
-	buttons.update();
 	window.Repaint();
 }
 
@@ -104,27 +103,35 @@ function on_font_changed() {
 function on_http_request_done(task_id, success, response_text) {
 	thumbs.http_request_done(task_id, success, response_text);
 	text.http_request_done(task_id, success, response_text);
-	buttons.update();
 }
 
 function on_item_focus_change() {
 	if (panel.selection.value == 0 && fb.IsPlaying) return;
 	panel.item_focus_change();
-	buttons.check_default_file();
-	buttons.update();
 }
 
 function on_key_down(k) {
-	text.key_down(k);
-	thumbs.key_down(k);
+	panel.key_down(k);
+	// text.key_down(k);
+	// thumbs.key_down(k);
+	switch (k) {
+	case VK_F5:
+		text.get();
+		text.get_extra();
+		break;
+	case VK_DELETE:
+		if (thumbs.images.length) {
+			utils.RemovePath(thumbs.images[thumbs.image].Path);
+			thumbs.update();
+		}
+		break;
+	}
 }
 
 function on_metadb_changed(handles, fromhook) {
 	if (fromhook) return;
 	text.metadb_changed();
 	thumbs.metadb_changed();
-	buttons.check_default_file();
-	buttons.update();
 }
 
 function on_mouse_leave() {
@@ -168,7 +175,6 @@ function on_mouse_wheel(s) {
 	} else {
 		thumbs.wheel(s);
 		text.wheel(s);
-		buttons.update();
 	}
 }
 
@@ -210,15 +216,15 @@ function on_playlist_switch() {
 function on_size() {
 	panel.size();
 
-	thumbs.x = TM;
-	thumbs.y = TM;
-	thumbs.w = panel.w - TM * 2;
+	thumbs.x = panel.bs;
+	thumbs.y = panel.bs;
+	thumbs.w = panel.w - panel.bs * 2;
 	thumbs.h = panel.h * thumbs.properties.ratio.value;
 
-	text.x = TM;
-	text.y = thumbs.x + thumbs.h + TM;
-	text.w = panel.w - TM * 2;
-	text.h = panel.h - thumbs.y - thumbs.h - TM * 2;
+	text.x = panel.bs;
+	text.y = thumbs.x + thumbs.h + panel.bs;
+	text.w = panel.w - panel.bs * 2;
+	text.h = panel.h - thumbs.y - thumbs.h - panel.bs * 2;
 
 	text.size();
 

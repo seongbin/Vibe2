@@ -91,12 +91,14 @@ function _panel(options) {
 		this.fonts.bold = JSON.stringify({Name:this.fonts.name,Size:_scale(this.fonts.size.value),Weight:DWRITE_FONT_WEIGHT_SEMI_BOLD});
 		this.fonts.title = JSON.stringify({Name:this.fonts.name,Size:_scale(this.fonts.size.value + 2),Weight:DWRITE_FONT_WEIGHT_SEMI_BOLD});
     this.fonts.fixed = JSON.stringify({Name:'Consolas',Size:_scale(this.fonts.size.value)});
+		this.fonts.rating = JSON.stringify({Name:utils.CheckFont('Guifx v2 Transports')?'Guifx v2 Transports':'Segoe Fluent Icons',Size:utils.CheckFont('Guifx v2 Transports')?_scale(this.fonts.size.value + 8):_scale(this.fonts.size.value + 4)});
+    this.fonts.heart = JSON.stringify({Name:'Segoe Fluent Icons',Size:_scale(this.fonts.size.value + 1)});
+    this.fonts.heart_extra = JSON.stringify({Name:'Segoe Fluent Icons',Size:_scale(this.fonts.size.value + 3)});
 		this.row_height = _scale(this.fonts.size.value + 8);
 		this.bs = _scale(this.fonts.size.value + 15);
 		_.invoke(this.text_objects, 'font_changed');
 		_.invoke(this.list_objects, 'size', true);
 		_.invoke(this.display_objects, 'refresh', true);
-		console.log(this.bs);
 	}
 
 	this.item_focus_change = function () {
@@ -110,11 +112,18 @@ function _panel(options) {
 
 	this.key_down = function (vkey) {
 		switch (vkey) {
-			case VK_UP : fb.VolumeUp(); break;
-			case VK_DOWN : fb.VolumeDown(); break;
 			case VK_LEFT : fb.RunMainMenuCommand('Playback/Seek/Back by 5 seconds'); break;
 			case VK_RIGHT : fb.RunMainMenuCommand('Playback/Seek/Ahead by 5 seconds'); break;
 			case VK_SPACEBAR : fb.PlayOrPause(); window.Repaint(); break;
+		}
+		if (utils.IsKeyPressed(VK_CONTROL) && vkey == 48) { // CTRL+0
+			if (this.fonts.size.value > _.first(this.fonts.sizes)) {
+				this.fonts.size.value = _.first(this.fonts.sizes);
+				window.SetProperty('2K3.PANEL.FONTS.SIZE', this.fonts.size.value);
+				this.font_changed();
+				on_size();
+				window.Repaint();
+			}
 		}
 	}
 
@@ -122,7 +131,7 @@ function _panel(options) {
 		if (object && object.trace(x, y)) {
 			return object.lbtn_dblclk(x, y);
 		} else {
-			return window.IsDefaultUI ? fb.RunMainMenuCommand('View/Show now playing') : fb.RunMainMenuCommand('View/Playlist view/Activate now playing');
+			return fb.RunMainMenuCommand('View/Show now playing');
 		}
 	}
 

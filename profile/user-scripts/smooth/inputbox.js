@@ -4,7 +4,7 @@ var cInputbox = {
 	clipboard: null
 }
 
-function oInputbox(w, h, live_update, default_text, empty_text, func) {
+function oInputbox(w, h, live_update, default_text, empty_text, func, parent) {
 	this.w = w;
 	this.h = h;
 	this.default_text = default_text;
@@ -91,7 +91,7 @@ function oInputbox(w, h, live_update, default_text, empty_text, func) {
 				var x1 = this.x + this.Cx;
 				var x2 = x1;
         var y1 = this.y + (this.h - g_font_height) * 0.5 - 5;
-        var y2 = this.y + (this.h + g_font_height) * 0.5 + 5 ;
+        var y2 = this.y + (this.h + g_font_height) * 0.5 + 5;
 				var lt = 1;
 				gr.DrawLine(x1, y1, x2, y2, lt, g_colour_text);
 			}
@@ -99,7 +99,7 @@ function oInputbox(w, h, live_update, default_text, empty_text, func) {
 	}
 
 	this.repaint = function () {
-		brw.repaint();
+		parent.repaint();
 	}
 
 	this.CalcText = function () {
@@ -150,7 +150,7 @@ function oInputbox(w, h, live_update, default_text, empty_text, func) {
 		}
 		cInputbox.timer_cursor = window.SetInterval(function () {
 			cInputbox.cursor_state = !cInputbox.cursor_state;
-			brw.repaint();
+			parent.repaint();
 		}, 500);
 	}
 

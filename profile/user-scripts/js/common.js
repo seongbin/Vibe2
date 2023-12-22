@@ -75,11 +75,9 @@ function _buttons() {
 		}
 		if (this.btn) {
 			this.buttons[this.btn].cs('normal');
-			window.SetCursor(IDC_ARROW);
 		}
 		if (temp_btn) {
 			this.buttons[temp_btn].cs('hover');
-			window.SetCursor(IDC_HAND);
 		} else {
 			_tt('');
 		}
@@ -127,6 +125,10 @@ function _dispose() {
 	});
 }
 
+function _n(colour) {
+	return RGB(Math.abs(getRed(colour) - 255), Math.abs(getGreen(colour) - 255), Math.abs(getBlue(colour) - 255));
+}
+
 function _drawImage(gr, img, dst_x, dst_y, dst_w, dst_h, mode, rounded, border, opacity) {
 	if (!img) {
 		return [];
@@ -134,7 +136,7 @@ function _drawImage(gr, img, dst_x, dst_y, dst_w, dst_h, mode, rounded, border, 
 
 	var rounded_mask = utils.CreateImage(img.Width, img.Height);
 	var temp_gr = rounded_mask.GetGraphics();
-	temp_gr.FillRoundedRectangle(0, 0, img.Width, img.Height, img.Width * 0.02, img.Height * 0.02, RGB(0, 0, 0));
+	temp_gr.FillRoundedRectangle(0, 0, img.Width, img.Height, img.Width * 0.03, img.Height * 0.03, 0xff000000);
 	rounded_mask.ReleaseGraphics();
 	temp_gr = null;
 
@@ -143,7 +145,7 @@ function _drawImage(gr, img, dst_x, dst_y, dst_w, dst_h, mode, rounded, border, 
 	case mode == image.stretch:
 		if (rounded) {
 			gr.DrawImageWithMask(img, rounded_mask, dst_x, dst_y, dst_w, dst_h);
-			gr.DrawRoundedRectangle(dst_x, dst_y, dst_w, dst_h, dst_w * 0.02, dst_w * 0.02, _scale(1), border);
+			gr.DrawRoundedRectangle(dst_x, dst_y, dst_w, dst_h, dst_w * 0.03, dst_w * 0.03, _scale(1), border);
 		} else {
 			gr.DrawImage(img, dst_x, dst_y, dst_w, dst_h, 0, 0, img.Width, img.Height, opacity || 1);
 			gr.DrawRectangle(dst_x, dst_y, dst_w, dst_h, _scale(1), border);
@@ -403,11 +405,11 @@ function _sb(ch, x, y, w, h, v, fn) {
 			window.SetCursor(IDC_HAND);
 			this.hover = true;
 			return true;
-		} else {
-			//window.SetCursor(IDC_ARROW);
-			this.hover =false;
-			return false;
 		}
+
+		//window.SetCursor(IDC_ARROW);
+		this.hover =false;
+		return false;
 	}
 
 	this.lbtn_up = function (x, y) {
@@ -444,7 +446,7 @@ function _stripTags(value) {
 	doc.open();
 	var div = doc.createElement('div');
 	div.innerHTML = value.toString().replace(/<[Pp][^>]*>/g, '').replace(/<\/[Pp]>/g, '<br>').replace(/\n/g, '<br>');
-	var tmp = _.trim(div.innerText);
+	var tmp = div.innerText.trim();
 	doc.close();
 	return tmp;
 }
@@ -468,7 +470,7 @@ var N = window.Name + ':';
 var LM = _scale(5);
 var TM = _scale(20);
 
-var tooltip = window.CreateTooltip('Segoe UI', _scale(11));
+var tooltip = window.CreateTooltip('Segoe UI', _scale(12));
 tooltip.SetMaxWidth(800);
 
 var folders = {};
@@ -514,9 +516,9 @@ var chars = {
 	pause: '\uf8ae',
 	stop: '\ue002',
 	next: '\ue623',
-	heart_break: '\uea92',
-	heart_off: '\ueb51',
-	heart_on: '\ueb52',
+	heart_break: '\ue00c',
+	heart_off: '\ue006',
+	heart_on: '\ue00b',
 	rating_off: '\ue1ce',
 	rating_on: '\ue1cf',
 	shuffle: '\ue14b',
@@ -535,6 +537,7 @@ var chars = {
 	output: '\uebde',
 	smile: '\ueb68',
 	pref: '\ue713',
+	cmd: '\ue756',
 	down: '\ue70d',
 	up: '\ue70e',
 	download: '\ue118',

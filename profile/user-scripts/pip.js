@@ -19,6 +19,8 @@ function _pip() {
 			this.img = null;
 			if (img) {
 				this.img = img;
+				this.grayscale = this.img.Clone();
+				this.grayscale.ApplyEffect(0);
         this.blurred = this.img.Clone();
         this.blurred.StackBlur(200);
 			}
@@ -28,7 +30,7 @@ function _pip() {
 	this.trace = function (x, y) { return x > this.x && x < this.x + this.w && y > this.y && y < this.y + this.h; }
 
   this.lbtn_dblclk = function (x, y) {
-    // do something to activate fb main window, ui_hacks?
+    fb.RunMainMenuCommand('View/Activate or hide');
   }
 
   this.leave = function () {
@@ -58,7 +60,7 @@ function _pip() {
 	this.paint = function (gr) {
 		if (this.img) {
 			_drawImage(gr, this.blurred, 0, 0, panel.w, panel.h, image.stretch);
-			_drawImage(gr, this.img, this.x, this.y, this.w, this.h, image.centre);
+			_drawImage(gr, fb.IsPaused ? this.grayscale : this.img, this.x, this.y, this.w, this.h, image.centre);
 		} else {
 			gr.WriteText('NO\n COVER', panel.fonts.title, panel.colours.blend, this.x, this.y, this.w, this.h, 2, 2);
 		}
@@ -99,7 +101,7 @@ function _volume() {
   }
 
 	this.paint = function (gr) {
-    if (this.timer > 0) {
+    if (this.timer) {
       this.str = Math.ceil(this.vol2percentage(fb.Volume) * 100) + '%';
 			gr.WriteText(this.str, panel.fonts.title, 0xffffffff, this.x, this.y, this.w, this.h, 0, 2);
     }
@@ -113,9 +115,9 @@ buttons.update = function () {
 
 	bx = panel.w * 0.5 - panel.bs * 0.5;
   by = panel.h - panel.bs * 2;
-  buttons.buttons.prev = new _button(bx - panel.bs, by, panel.bs, panel.bs, { char : chars.prev, colour : 0xffffffff }, { char : chars.prev, colour : 0xffffffff, bg : 0x96000000 }, function () { fb.Prev(); }, '');
+  buttons.buttons.prev = new _button(bx - panel.bs * 1.5, by, panel.bs, panel.bs, { char : chars.prev, colour : 0xffffffff }, { char : chars.prev, colour : 0xffffffff, bg : 0x96000000 }, function () { fb.Prev(); }, '');
   buttons.buttons.play = new _button(bx, by, panel.bs, panel.bs, { char : fb.IsPlaying ? !fb.IsPlaying || fb.IsPaused ? chars.play : chars.pause : chars.stop, colour : 0xffffffff }, { char : fb.IsPlaying ? !fb.IsPlaying || fb.IsPaused ? chars.play : chars.pause : chars.stop, colour : 0xffffffff, bg : 0x96000000 }, function () { fb.PlayOrPause(); }, '');
-  buttons.buttons.next = new _button(bx + panel.bs, by, panel.bs, panel.bs, { char : chars.next, colour : 0xffffffff }, { char : chars.next, colour : 0xffffffff, bg : 0x96000000 }, function () { fb.Next(); }, '');
+  buttons.buttons.next = new _button(bx + panel.bs * 1.5, by, panel.bs, panel.bs, { char : chars.next, colour : 0xffffffff }, { char : chars.next, colour : 0xffffffff, bg : 0x96000000 }, function () { fb.Next(); }, '');
 }
 
 buttons.shuffle = function () {
@@ -157,7 +159,7 @@ function on_playback_new_track() { panel.item_focus_change(); buttons.update(); 
 function on_playback_order_changed () { buttons.update(); }
 function on_playback_seek() {}
 function on_playback_stop(reason) { if (reason != 2) { panel.item_focus_change(); } buttons.update(); }
-function on_playback_pause() { buttons.update(); }
+function on_playback_pause() { buttons.update(); window.Repaint(); }
 function on_playback_starting() { buttons.update(); }
 function on_playlist_stop_after_current_changed() { buttons.update(); window.Repaint(); }
 function on_playlist_switch() { if (panel.selection.value == 0 && fb.IsPlaying) return; panel.item_focus_change(); buttons.update(); }
