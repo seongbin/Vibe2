@@ -58,10 +58,10 @@ thumbs.wheel = function (s) {
 }
 
 buttons.update = function () {
-	// buttons.buttons.default_file = new _button(text.x + text.w - panel.bs * 4.25, thumbs.y + thumbs.h - panel.bs * 1.25, panel.bs, panel.bs, { char : buttons.check_default_file() ? chars.heart_on : chars.heart_off, colour: buttons.check_default_file() ? colours.Red : 0x96ffffff, bg : 0x96000000 }, { char : buttons.check_default_file() ? chars.heart_break : chars.heart_on, colour: colours.Red }, function () { try { buttons.check_default_file() ? thumbs.set_default(undefined) : thumbs.set_default(thumbs.images[thumbs.image].Path.split('\\').pop()); } catch (e) {} }, buttons.check_default_file() ? 'Clear default' : 'Set as default image');
-	// buttons.buttons.download = new _button(text.x + text.w - panel.bs * 3.25, thumbs.y + thumbs.h - panel.bs * 1.25, panel.bs, panel.bs, { char : chars.download, colour: 0x96ffffff, bg : 0x96000000 }, { char : chars.download, colour: 0xffffffff, bg : 0x96000000 }, function () { thumbs.download(); }, 'Download image now');
-	// buttons.buttons.folder_open = new _button(text.x + text.w - panel.bs * 2.25, thumbs.y + thumbs.h - panel.bs * 1.25, panel.bs, panel.bs, { char : chars.folder_open, colour: 0x96ffffff, bg : 0x96000000 }, { char : chars.folder_open, colour: 0xffffffff, bg : 0x96000000 }, function () { try { buttons.folder_open(); } catch (e) {} }, 'Open containing folder');
-	buttons.buttons.force = new _button(text.x + text.w - panel.bs * 1.25, thumbs.y + thumbs.h - panel.bs * 1.25, panel.bs, panel.bs, { char : chars.update, colour: 0x96ffffff, bg : 0x96000000 }, { char : chars.update, colour: 0xffffffff, bg : 0x96000000 }, function () { text.get(); text.get_extra(); }, 'Force update text (F5)');
+	buttons.buttons.default_file = new _button(text.x + text.w - panel.bs * 4.25, thumbs.y + thumbs.h - panel.bs * 1.25, panel.bs, panel.bs, { char : buttons.check_default_file() ? chars.heart_on : chars.heart_off, colour: buttons.check_default_file() ? colours.Red : 0x96ffffff, bg : 0x48000000 }, { char : buttons.check_default_file() ? chars.heart_break : chars.heart_on, colour: colours.Red, bg : 0x96000000 }, function () { try { buttons.check_default_file() ? thumbs.set_default(undefined) : thumbs.set_default(thumbs.images[thumbs.image].Path.split('\\').pop()); } catch (e) {} }, buttons.check_default_file() ? 'Clear default' : 'Set as default image');
+	buttons.buttons.download = new _button(text.x + text.w - panel.bs * 3.25, thumbs.y + thumbs.h - panel.bs * 1.25, panel.bs, panel.bs, { char : chars.download, colour: 0x96ffffff, bg : 0x48000000 }, { char : chars.download, colour: 0xffffffff, bg : 0x96000000 }, function () { thumbs.download(); }, 'Download image now');
+	buttons.buttons.folder_open = new _button(text.x + text.w - panel.bs * 2.25, thumbs.y + thumbs.h - panel.bs * 1.25, panel.bs, panel.bs, { char : chars.folder_open, colour: 0x96ffffff, bg : 0x48000000 }, { char : chars.folder_open, colour: 0xffffffff, bg : 0x96000000 }, function () { try { buttons.folder_open(); } catch (e) {} }, 'Open containing folder');
+	buttons.buttons.force = new _button(text.x + text.w - panel.bs * 1.25, thumbs.y + thumbs.h - panel.bs * 1.25, panel.bs, panel.bs, { char : chars.update, colour: 0x96ffffff, bg : 0x48000000 }, { char : chars.update, colour: 0xffffffff, bg : 0x96000000 }, function () { text.get(); text.get_extra(); }, 'Force update text (F5)');
 }
 
 buttons.folder_open = function () {
@@ -216,15 +216,15 @@ function on_playlist_switch() {
 function on_size() {
 	panel.size();
 
-	thumbs.x = panel.bs;
-	thumbs.y = panel.bs;
-	thumbs.w = panel.w - panel.bs * 2;
+	thumbs.x = TM;
+	thumbs.y = TM;
+	thumbs.w = panel.w - TM * 2;
 	thumbs.h = panel.h * thumbs.properties.ratio.value;
 
-	text.x = panel.bs;
-	text.y = thumbs.x + thumbs.h + panel.bs;
-	text.w = panel.w - panel.bs * 2;
-	text.h = panel.h - thumbs.y - thumbs.h - panel.bs * 2;
+	text.x = TM;
+	text.y = thumbs.x + thumbs.h + TM;
+	text.w = panel.w - TM * 2;
+	text.h = panel.h - thumbs.y - thumbs.h - TM * 2;
 
 	text.size();
 
