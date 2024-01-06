@@ -11,8 +11,8 @@ This is a simple 'Now Playing' mockup built with samples included in [marc2k3](h
 1. <kbd>Space</kbd>, Play/Pause
 2. <kbd>→</kbd>, Ahead by 5 seconds
 3. <kbd>←</kbd>, Back by 5 seconds
-4. <kbd>Ctrl</kbd>+<kbd>Wheel</kbd>, Scaling layout (based on font size, ranging from 9 to 14)
-5. <kbd>Ctrl</kbd>+<kbd>0</kbd>, Reset scaling (revert font size to 9)
+4. <kbd>Shift</kbd>+<kbd>Wheel</kbd>, Scaling layout (based on font size, ranging from 9 to 14)
+5. <kbd>Shift</kbd>+<kbd>0</kbd>, Reset scaling (revert font size to 9)
 
 ## Notes
 

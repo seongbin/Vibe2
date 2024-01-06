@@ -293,8 +293,8 @@ function _seekbar() {
 				gr.FillRoundedRectangle(this.x, this.y, this.w, this.h, this.h * 0.5, this.h * 0.5, panel.colours.blend & 0x32ffffff);
 				if (fb.PlaybackLength > 0) {
 					gr.FillRoundedRectangle(this.x, this.y, this.pos(), this.h, this.h * 0.5, this.h * 0.5, this.hover ? panel.colours.mode != 1 ? panel.colours.highlight : panel.colours.text : panel.colours.blend & 0xccffffff);
-					gr.FillEllipse(this.x + this.pos(), this.y + this.h * 0.5, this.mw, this.mh, this.hover ? panel.colours.text : 0);
-					gr.DrawEllipse(this.x + this.pos(), this.y + this.h * 0.5, this.mw, this.mh, 1, this.hover ? panel.colours.background & 0xccffffff : 0);
+					gr.FillEllipse(this.x + this.pos(), this.y + this.h * 0.5, this.mw, this.mh, this.hover ? 0xffffffff : 0);
+					gr.DrawEllipse(this.x + this.pos(), this.y + this.h * 0.5, this.mw, this.mh, 1, this.hover ? 0x96000000 : 0);
 					gr.WriteText(panel.tf(tfo.elap, true), panel.fonts.normal, panel.colours.blend, this.x - this.tw - LM * 2, this.y - this.h * 1.75, this.tw, panel.row_height, 1, 2, 1, 1);
 					gr.WriteText(panel.tf(tfo.remain, true), panel.fonts.normal, panel.colours.blend, this.x + this.w + LM * 2, this.y - this.h * 1.75, this.tw, panel.row_height, 0, 2, 1, 1);
 				}
@@ -470,8 +470,8 @@ function _volume() {
     }
 		gr.FillRoundedRectangle(this.x, this.y, this.w, this.h, this.h * 0.5, this.h * 0.5, panel.colours.blend & 0x32ffffff);
 		gr.FillRoundedRectangle(this.x, this.y, this.pos(), this.h, this.h * 0.5, this.h * 0.5, this.hover ? panel.colours.mode != 1 ? panel.colours.highlight : panel.colours.text : panel.colours.blend & 0xccffffff);
-		gr.FillEllipse(this.x + this.pos(), this.y + this.h * 0.5, this.mw, this.mh, this.hover ? panel.colours.text : 0);
-		gr.DrawEllipse(this.x + this.pos(), this.y + this.h * 0.5, this.mw, this.mh, 1, this.hover ? panel.colours.background & 0xccffffff : 0);
+		gr.FillEllipse(this.x + this.pos(), this.y + this.h * 0.5, this.mw, this.mh, this.hover ? 0xffffffff : 0);
+		gr.DrawEllipse(this.x + this.pos(), this.y + this.h * 0.5, this.mw, this.mh, 1, this.hover ? 0x96000000 : 0);
 }
 
 	this.hover = false;
@@ -590,10 +590,8 @@ buttons.update = function () {
 
 	bx2 = Math.max(seekbar.x + seekbar.w + panel.bs + LM * 3, panel.w - panel.bs * 8 - LM * 3);
 	by2 = panel.h * 0.5 - panel.bs * 0.5;
-	// buttons.buttons.pref = new _button(bx2 + panel.bs * 0, by2, panel.bs, panel.bs, { char : chars.pref, colour: panel.colours.blend }, { char : chars.pref, colour: panel.colours.text, bg : panel.colours.blend & 0x48ffffff }, function () { fb.RunMainMenuCommand('File/Preferences'); }, 'Preferences');
-	// buttons.buttons.cmd = new _button(bx2 + panel.bs * 1, by2, panel.bs, panel.bs, { char : chars.cmd, colour: panel.colours.blend }, { char : chars.cmd, colour: panel.colours.text, bg : panel.colours.blend & 0x48ffffff }, function () { fb.RunMainMenuCommand('View/Console'); }, 'Console');
-	buttons.buttons.pls = new _button(bx2 + panel.bs * 0, by2, panel.bs, panel.bs, { char : chars.playlist, colour: panel.colours.blend }, { char : chars.playlist, colour: panel.colours.text, bg : panel.colours.blend & 0x48ffffff }, function () { window.NotifyOthers('SCRIPT', 0); }, 'Playlist');
-	buttons.buttons.bio = new _button(bx2 + panel.bs * 1, by2, panel.bs, panel.bs, { char : chars.biography, colour: panel.colours.blend }, { char : chars.biography, colour: panel.colours.text, bg : panel.colours.blend & 0x48ffffff }, function () { window.NotifyOthers('SCRIPT', 1); }, 'Biography');
+	buttons.buttons.pref = new _button(bx2 + panel.bs * 0, by2, panel.bs, panel.bs, { char : chars.pref, colour: panel.colours.blend }, { char : chars.pref, colour: panel.colours.text, bg : panel.colours.blend & 0x48ffffff }, function () { fb.RunMainMenuCommand('File/Preferences'); }, 'Preferences');
+	buttons.buttons.cmd = new _button(bx2 + panel.bs * 1, by2, panel.bs, panel.bs, { char : chars.cmd, colour: panel.colours.blend }, { char : chars.cmd, colour: panel.colours.text, bg : panel.colours.blend & 0x48ffffff }, function () { fb.RunMainMenuCommand('View/Console'); }, 'Console');
 	buttons.buttons.output = new _button(bx2 + panel.bs * 2, by2, panel.bs, panel.bs, { char : chars.output, colour: panel.colours.blend }, { char : chars.output, colour: panel.colours.text, bg : panel.colours.blend & 0x48ffffff }, function () { buttons.output(bx2 + panel.bs * 2, panel.h * 0.5 + panel.bs * 0.5); }, 'Output Device' );
 	buttons.buttons.volume = new _button(bx2 + panel.bs * 3, by2, panel.bs, panel.bs, { char : fb.Volume == -100 ? chars.volume4 : fb.Volume == 0 ? chars.volume3 : fb.Volume > - 3 ? chars.volume2 : fb.Volume > -15 ? chars.volume1 : chars.volume0, colour: panel.colours.blend }, { char : fb.Volume == -100 ? chars.volume4 : fb.Volume == 0 ? chars.volume3 : fb.Volume > - 3 ? chars.volume2 : fb.Volume > -15 ? chars.volume1 : chars.volume0, colour: panel.colours.text, bg : panel.colours.blend & 0x48ffffff }, function () { fb.VolumeMute(); }, fb.Volume == -100 ? 'Resume volume' : 'Mute' );
 	buttons.buttons.flowin = new _button(bx2 + panel.bs * 7 + LM * 2, by2, panel.bs, panel.bs, { char : chars.flowin, colour : panel.colours.blend }, { char : chars.flowin, colour : panel.colours.text, bg : panel.colours.blend & 0x48ffffff }, function () { fb.RunMainMenuCommand('View/Flowin/Picture in picture/Show'); }, 'Picture in picture' );
@@ -660,4 +658,4 @@ function on_playlist_stop_after_current_changed() {}
 function on_playlist_switch() { if (panel.selection.value == 0 && fb.IsPlaying) return; panel.item_focus_change(); buttons.update(); }
 function on_volume_change() { volume.volume_change(); if (volume.timer) window.ClearTimeout(volume.timer); volume.timer = window.SetTimeout(function () { volume.timer = 0; window.Repaint(); }, 1500);  buttons.update(); window.Repaint(); }
 function on_size() { panel.size(); albumart.size(); seekbar.size(); rating.size(); buttons.update(); volume.size(); picker.size(); esl.size(); window.MaxHeight = panel.bs * 5; window.MinHeight = panel.bs * 3; window.minWidth = panel.bs * 31; }
-function on_paint(gr) { panel.paint(gr); albumart.paint(gr); seekbar.paint(gr); rating.paint(gr); volume.paint(gr); picker.paint(gr); buttons.paint(gr); }
+function on_paint(gr) { panel.paint(gr); albumart.paint(gr); seekbar.paint(gr); rating.paint(gr); volume.paint(gr); /*picker.paint(gr);*/ buttons.paint(gr); }

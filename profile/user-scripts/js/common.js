@@ -545,6 +545,8 @@ var chars = {
 	update: '\ue777',
 	folder_open: '\ue838',
 	delete: '\ue107',
+	vertical: '\ue146',
+	horizental: '\ue147',
 	// Ignore these, they are special chars for $rgb and $font parsing
 	etx : String.fromCharCode(3),
 	bel : String.fromCharCode(7),

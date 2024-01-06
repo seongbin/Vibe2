@@ -181,8 +181,6 @@ function GetKeyboardMask() {
 }
 
 function button(normal, hover, down) {
-	this.x = 0;
-	this.y = 0;
 	this.w = normal.Width;
 	this.h = normal.Height;
 	this.img = [normal, hover, down];
@@ -305,7 +303,7 @@ function get_font() {
 	g_font_height = height(g_font);
 	g_font_bold_height = height(g_font_bold);
 	g_font_group_height = height(g_font_group);
-	g_margin = scale(g_fsize.value - 4);
+	ma = scale(g_fsize.value - 4);
 }
 
 function get_colours() {
@@ -402,9 +400,9 @@ var CACHE_FOLDER = fb.ProfilePath + "cache\\";
 utils.CreateFolder(CACHE_FOLDER);
 
 var g_font = undefined;
+var g_font_bold = undefined;
 var g_font_group = undefined;
 var g_fsize = new _p('SMOOTH.FONT.SIZE', 9);
-var g_margin = 0;
 var g_rating_type = false;
 
 var g_colour_text = undefined;
@@ -421,6 +419,7 @@ var isScrolling = false;
 var need_repaint = false;
 var g_start_ = 0, g_end_ = 0;
 var m_x = 0, m_y = 0;
+var ma = 0; // margin
 var scroll_ = 0, scroll = 0, scroll_prev = 0;
 var ww = 0, wh = 0;
 

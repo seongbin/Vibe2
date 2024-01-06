@@ -74,7 +74,7 @@ function oScrollbar(parent) {
 	this.size = function () {
 		this.x = parent.x + parent.w;
 		this.y = parent.y;
-		this.w = g_margin + scale(11);
+		this.w = ma + scale(11);
 		this.h = parent.h;
 	}
 

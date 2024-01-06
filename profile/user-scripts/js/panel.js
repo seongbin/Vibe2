@@ -116,7 +116,7 @@ function _panel(options) {
 			case VK_RIGHT : fb.RunMainMenuCommand('Playback/Seek/Ahead by 5 seconds'); break;
 			case VK_SPACEBAR : fb.PlayOrPause(); window.Repaint(); break;
 		}
-		if (utils.IsKeyPressed(VK_CONTROL) && vkey == 48) { // CTRL+0
+		if (utils.IsKeyPressed(VK_SHIFT) && vkey == 48) { // SHIFT+0
 			if (this.fonts.size.value > _.first(this.fonts.sizes)) {
 				this.fonts.size.value = _.first(this.fonts.sizes);
 				window.SetProperty('2K3.PANEL.FONTS.SIZE', this.fonts.size.value);
@@ -131,7 +131,7 @@ function _panel(options) {
 		if (object && object.trace(x, y)) {
 			return object.lbtn_dblclk(x, y);
 		} else {
-			return fb.RunMainMenuCommand('View/Show now playing');
+			return window.IsDefaultUI ? fb.RunMainMenuCommand('View/Show now playing') : fb.RunMainMenuCommand('View/Playlist view/Activate now playing');
 		}
 	}
 
@@ -270,7 +270,7 @@ function _panel(options) {
 	}
 
 	this.wheel = function (s, object) {
-		if (utils.IsKeyPressed(VK_CONTROL)) {
+		if (utils.IsKeyPressed(VK_SHIFT)) {
 			this.update_extra_font_size(s);
 		} else if (object) {
 			object.wheel(s);

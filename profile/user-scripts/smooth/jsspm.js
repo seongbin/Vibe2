@@ -122,19 +122,6 @@ function on_key_down(vkey) {
 			}
 		} else if (mask == KMask.ctrl) {
 			switch (vkey) {
-			case 48: // CTRL+0
-				if (g_fsize.value > 9) {
-					g_fsize.value = 9;
-					window.SetProperty("SMOOTH.FONT.SIZE", g_fsize.value);
-					g_margin = scale(g_fsize.value - 4);
-					get_font();
-					get_metrics();
-					get_images();
-					brw.size();
-					brw.scrollbar.setCursorButton(); // cannot contained in brw.scrollbar.size
-					brw.repaint();
-				}
-				break;
 			case 66: // CTRL+B
 				ppt.showScrollBar = !ppt.showScrollBar;
 				window.SetProperty("SMOOTH.SHOW.SCROLLBAR", ppt.showScrollBar);
@@ -146,6 +133,22 @@ function on_key_down(vkey) {
 				window.SetProperty("SMOOTH.SHOW.ITEMCOUNT", ppt.showItemCount);
 				get_metrics();
 				brw.repaint();
+				break;
+			}
+		} else if (mask == KMask.shift) {
+			switch (vkey) {
+			case 48: // SHIFT+0
+				if (g_fsize.value > 9) {
+					g_fsize.value = 9;
+					window.SetProperty("SMOOTH.FONT.SIZE", g_fsize.value);
+					ma = scale(g_fsize.value - 4);
+					get_font();
+					get_metrics();
+					get_images();
+					brw.size();
+					brw.scrollbar.setCursorButton(); // cannot contained in brw.scrollbar.size
+					brw.repaint();
+				}
 				break;
 			}
 		}
@@ -196,7 +199,7 @@ function on_mouse_move(x, y) {
 }
 
 function on_mouse_wheel(step) {
-	if (utils.IsKeyPressed(VK_CONTROL)) {
+	if (utils.IsKeyPressed(VK_SHIFT)) {
 		brw.inputboxID = -1;
 		update_extra_font_size(step);
 	} else {
@@ -241,6 +244,69 @@ function on_playlists_changed() {
 	brw.populate();
 }
 
+function oLoader(text, x, y, w, h) {
+	this.text = text;
+	this.x = x + ma;
+	this.y = y;
+	this.w = w + ma * 2;
+	this.h = h;
+	this.state = ButtonStates.normal;
+
+	this.repaint = function () {
+		window.RepaintRect(this.x, this.y, this.w, this.h);
+	}
+
+	this.trace = function (x, y) {
+		return x > this.x && x < this.x + this.w && y > this.y && y < this.y + this.h;
+	}
+
+	this.lbtn_down = function (x, y) {
+		this.old = this.state;
+		switch (this.state) {
+			case ButtonStates.normal:
+			case ButtonStates.hover:
+				this.state = this.trace(x, y) ? ButtonStates.down : ButtonStates.normal;
+				this.isdown = true;
+				break;
+		}
+		if (this.state != this.old) this.repaint();
+		return this.state;
+	}
+
+	this.lbtn_up = function (x, y) {
+		this.old = this.state;
+		this.state = this.trace(x, y) ? ButtonStates.hover : ButtonStates.normal;
+		this.isdown = false;
+		if (this.state != this.old) this.repaint();
+		return this.state;
+	}
+
+	this.leave = function () {
+		this.old = this.state;
+		this.state = this.isdown ? ButtonStates.down : ButtonStates.normal;
+		if (this.state != this.old) this.repaint();
+		return this.state;
+	}
+
+	this.move = function (x, y) {
+		this.old = this.state;
+		switch (this.state) {
+			case ButtonStates.normal:
+			case ButtonStates.hover:
+				this.state = this.trace(x, y) ? ButtonStates.hover : ButtonStates.normal;
+				break;
+		}
+		if (this.state != this.old) this.repaint();
+		return this.state;
+	}
+
+	this.paint = function (gr) {
+		this.col = [g_colour_highlight, g_colour_highlight & 0xccffffff, g_colour_highlight & 0x96ffffff];
+		gr.FillRoundedRectangle(this.x, this.y + 3, this.w, this.h - 6, (this.h - 6) * 0.5, (this.h - 6) * 0.5, this.col[this.state]);
+		gr.WriteText(this.text, g_font_bold, DetermineTextColour(this.col[this.state]), this.x, this.y, this.w, this.h, 2, 2);
+	}
+}
+
 function oBrowser() {
 	this.repaint = function () {
 		need_repaint = true;
@@ -248,7 +314,7 @@ function oBrowser() {
 
 	this.size = function () {
 		this.x = 0;
-		this.y = 0;
+		this.y = ppt.rowHeight * 3;
 		this.w = ww - (ppt.showScrollBar ? this.scrollbar.w : 0) - this.x;
 		this.h = wh - this.y;
 		this.totalRows = Math.ceil(this.h / ppt.rowHeight);
@@ -256,7 +322,7 @@ function oBrowser() {
 
 		if (this.inputboxID > -1) {
 			var rh = ppt.rowHeight;
-			var tw = this.w - this.x - g_margin * 2;
+			var tw = this.w - this.x - ma * 2;
 			if (this.inputbox) {
 				this.inputbox.size(tw, rh);
 			}
@@ -269,6 +335,10 @@ function oBrowser() {
 		scroll_ = scroll;
 
 		this.scrollbar.updateScrollbar();
+
+		this.buttons.pls = new oLoader("Playlist", 0, ppt.rowHeight * 0.5, "Playlist".calc_width(g_font_bold) + ma * 2, ppt.rowHeight);
+		this.buttons.bio = new oLoader("Biography", 0, ppt.rowHeight * 1.5, "Biography".calc_width(g_font_bold) + ma * 2, ppt.rowHeight);
+
 	}
 
 	this.getlimits = function () {
@@ -350,6 +420,9 @@ function oBrowser() {
 	}
 
 	this.paint = function (gr) {
+		this.buttons.pls.paint(gr);
+		this.buttons.bio.paint(gr);
+
 		if (this.rows.length != plman.PlaylistCount) this.populate();
 		this.getlimits();
 
@@ -391,18 +464,18 @@ function oBrowser() {
 				// playing background
 				var isplaying = fb.IsPlaying && this.rows[i].idx == plman.PlayingPlaylist;
 				if (isplaying) {
-					gr.FillRectangle(ax, ay, g_margin, ah, g_colour_highlight);
+					gr.FillRectangle(ax, ay, ma, ah, g_colour_highlight);
 				}
 
 				var colour = isactive ? DetermineTextColour(g_colour_selection) : DetermineTextColour(g_colour_splitter);
 
 				if (this.inputboxID == i) {
-					this.inputbox.paint(gr, ax + g_margin * 2, ay);
+					this.inputbox.paint(gr, ax + ma * 2, ay);
 				} else {
 					var icw = []; // item count width
 					icw[i] = ppt.showItemCount ? this.rows[i].count.calc_width(g_font) : 0;
-					gr.WriteText(this.rows[i].name, g_font, colour, ax + g_margin * 2, ay, aw - icw[i] - g_margin * 4, ah, 0, 2, 1, 1);
-					gr.WriteText(this.rows[i].count, g_font, colour, aw - icw[i] - g_margin, ay, icw[i], ah, 1, 2, 1, 1);
+					gr.WriteText(this.rows[i].name, g_font, colour, ax + ma * 2, ay, aw - icw[i] - ma * 4, ah, 0, 2, 1, 1);
+					gr.WriteText(this.rows[i].count, g_font, colour, aw - icw[i] - ma, ay, icw[i], ah, 1, 2, 1, 1);
 				}
 			}
 		}
@@ -446,6 +519,9 @@ function oBrowser() {
 					this.inputboxID = -1;
 			}
 			this.up = false;
+
+			this.buttons.pls.lbtn_down(x, y);
+			this.buttons.bio.lbtn_down(x, y);
 			break;
 		case "lbtn_up":
 			this.up = true;
@@ -472,6 +548,9 @@ function oBrowser() {
 			cPlaylistManager.drag_moved = false;
 			cPlaylistManager.drag_source_id = -1;
 			cPlaylistManager.drag_target_id = -1;
+
+			this.buttons.pls.lbtn_up(x, y) && window.NotifyOthers('SCRIPT', 0);
+			this.buttons.bio.lbtn_up(x, y) && window.NotifyOthers('SCRIPT', 1);
 			break;
 		case "lbtn_dblclk":
 			if (this.ishover && this.activeRow > -1 && Math.abs(scroll - scroll_) < 2) {
@@ -485,6 +564,10 @@ function oBrowser() {
 				var p = plman.CreatePlaylist();
 				plman.ActivePlaylist = p;
 			}
+			break;
+		case "leave":
+			this.buttons.pls.leave();
+			this.buttons.bio.leave();
 			break;
 		case "move":
 			this.up = false;
@@ -528,6 +611,9 @@ function oBrowser() {
 					this.repaint();
 				}
 			}
+
+			this.buttons.pls.move(x, y);
+			this.buttons.bio.move(x, y);
 			break;
 		case "rbtn_up":
 			if (this.inputboxID >= 0) {
@@ -604,7 +690,7 @@ function oBrowser() {
 
 	this.edit_playlist = function (p) {
 		var rh = ppt.rowHeight;
-		var tw = this.w - this.x - g_margin * 2;
+		var tw = this.w - this.x - ma * 2;
 		this.inputbox = new oInputbox(tw, rh, false, plman.GetPlaylistName(p), "", "renamePlaylist()", this);
 		this.inputbox.size(tw, rh);
 		this.inputboxID = p;
@@ -782,6 +868,7 @@ function oBrowser() {
 	this.inputbox = null;
 	this.inputboxID = -1;
 	this.selectedRow = plman.ActivePlaylist;
+	this.buttons = [];
 }
 
 function oPlaylist(idx, name, count) {
@@ -797,8 +884,8 @@ function get_metrics() {
 
 	brw.size();
 
-	window.MinWidth = ppt.showScrollBar ? (ppt.rowHeight * 3 + brw.scrollbar.w) : ppt.rowHeight * 3;
-	window.MaxWidth = ppt.rowHeight * 5;
+	window.MinWidth = ppt.showScrollBar ? (ppt.rowHeight * 4 + brw.scrollbar.w) : ppt.rowHeight * 4;
+	window.MaxWidth = ppt.rowHeight * 6;
 }
 
 function check_scroll(scroll___) {
@@ -826,6 +913,7 @@ function renamePlaylist() {
 ppt.autoplaylist_sort_pattern = "%album artist% | $if(%album%,%date%,9999) | %album% | %discnumber% | %tracknumber% | %title%";
 ppt.showItemCount = window.GetProperty("SMOOTH.SHOW.ITEMCOUNT", false);
 ppt.showScrollBar = window.GetProperty("SMOOTH.SHOW.SCROLLBAR", false);
+ppt.active = window.GetProperty("SMOOTH.ACTIVE", 0);
 
 var autoplaylists = [
 	["Media Library", "ALL"],
